@@ -2,6 +2,21 @@
 
 CIL 2022 course project
 
+## Setup development environment
+
+Info: Conda must be installed. The required python version for this project is Python 3.10. Either create a new
+conda environment with `make create_environment` or use an existing Python 3.10 environment
+
+```bash
+cd cil2022
+make create_environment
+```
+
+The required packages can be installed through
+```bash
+make requirements
+```
+
 ## Project Organization
 ------------
 
