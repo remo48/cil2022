@@ -25,8 +25,7 @@ requirements: test_environment
 
 ## Make Dataset
 data: requirements
-	kaggle competitions download -c cil-road-segmentation-2022 -p data/raw -f raw_data.zip
-	$(PYTHON_INTERPRETER) src/data/make_dataset.py data/raw/raw_data.zip data/processed
+	$(PYTHON_INTERPRETER) src/data/make_dataset.py
 
 ## Delete all compiled Python files
 clean:
