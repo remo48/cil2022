@@ -15,13 +15,15 @@ def main():
     """
     logger = logging.getLogger(__name__)
     logger.info('making final data set from raw data')
+    Path(RAW_DATA_PATH).mkdir(parents=True, exist_ok=True)
+    Path(PROCESSED_DATA_PATH).mkdir(parents=True, exist_ok=True)
     
     logger.info('downloading dataset from kaggle')
     api = KaggleApi()
     api.authenticate()
     api.competition_download_files('cil-road-segmentation-2022', path=RAW_DATA_PATH)
 
-    logger.info('unzip dataset')
+    logger.info('extracting dataset from zip')
     zip_file = os.path.join(RAW_DATA_PATH, DATASET_NAME + '.zip')
     with zipfile.ZipFile(zip_file, 'r') as f:
         f.extractall(PROCESSED_DATA_PATH)
