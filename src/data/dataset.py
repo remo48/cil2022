@@ -17,9 +17,7 @@ class RoadSegDataset(Dataset):
         self.transform = transform
         self.img_names = os.listdir(img_path)
 
-    def wrapped_transform(self, sample):
-        image = sample.get("image")
-        mask = sample.get("mask")
+    def wrapped_transform(self, image, mask):
         if image is not None and mask is not None:
             return self.transform(image=image, mask=mask)
         if image is not None:
@@ -34,15 +32,15 @@ class RoadSegDataset(Dataset):
         img_name = self.img_names[index]
 
         image = cv2.imread(os.path.join(self.img_path, img_name))
-        sample = {"image": image}
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         if self.mask_path:
-            mask = cv2.imread(os.path.join(self.mask_path, img_name))
-            sample.update({"mask": mask})
+            mask = cv2.imread(os.path.join(self.mask_path, img_name), cv2.IMREAD_UNCHANGED)
+            mask //= 255
 
         if self.transform:
-            sample = self.wrapped_transform(sample)
-
-        return sample
+            sample = self.wrapped_transform(image, mask)
+            image, mask = sample.get("image"), sample.get("mask")
+        return image, mask
 
 
 class RoadSegDataModule(pl.LightningDataModule):
@@ -94,7 +92,7 @@ class RoadSegDataModule(pl.LightningDataModule):
             with zipfile.ZipFile(zip_file, 'r') as f:
                 f.extractall(processed_dir)
 
-    def setup(self):
+    def setup(self, stage=None):
         self.train_dataset = RoadSegDataset(
             img_path=self.train_img_path, mask_path=self.train_mask_path, transform=self.train_transform)
         self.val_dataset = RoadSegDataset(
@@ -110,7 +108,7 @@ class RoadSegDataModule(pl.LightningDataModule):
             np.random.seed(self.random_seed)
             np.random.shuffle(idx)
 
-        train_idx, val_idx = idx[:split], idx[split:]
+        train_idx, val_idx = idx[split:], idx[:split]
         self.train_sampler = SubsetRandomSampler(train_idx)
         self.val_sampler = SubsetRandomSampler(val_idx)
 
@@ -118,7 +116,7 @@ class RoadSegDataModule(pl.LightningDataModule):
         return DataLoader(self.train_dataset, batch_size=self.batch_size, sampler=self.train_sampler, num_workers=self.num_workers)
 
     def val_dataloader(self):
-        return DataLoader(self.val_dataset, batch_size=self.batch_size, sampler=self.val_sampler, num_workers=self.num_workers)
+        return DataLoader(self.val_dataset, batch_size=self.batch_size, sampler=self.val_sampler, num_workers=self.num_workers, shuffle=False)
 
     def test_dataloader(self):
-        return DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=self.num_workers)
+        return DataLoader(self.test_dataset, batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False)
