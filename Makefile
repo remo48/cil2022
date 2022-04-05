@@ -1,4 +1,4 @@
-.PHONY: clean data lint requirements
+.PHONY: clean data requirements
 
 #################################################################################
 # GLOBALS                                                                       #
@@ -32,15 +32,11 @@ clean:
 	find . -type f -name "*.py[co]" -delete
 	find . -type d -name "__pycache__" -delete
 
-## Lint using flake8
-lint:
-	flake8 src
-
 ## Set up python interpreter environment
 create_environment:
 ifeq (True,$(HAS_CONDA))
 	@echo ">>> Detected conda, creating conda environment."
-	conda create --name $(PROJECT_NAME) python=3.10
+	conda create --name $(PROJECT_NAME) python=3.9
 else
 	@echo ">>> Conda not installed on system. Please install conda."
 endif
