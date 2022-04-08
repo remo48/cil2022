@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 import pytorch_lightning as pl
 from albumentations.pytorch import ToTensorV2
+import torch
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.sampler import SequentialSampler
 
@@ -23,6 +24,27 @@ def one_hot_decode(one_hot, class_colors):
         x[x == i] = color
     return x
 
+def get_train_transform():
+    train_transform = [
+        A.RandomCrop(height=384, width=384, always_apply=True),
+        A.VerticalFlip(p=0.5),              
+        A.RandomRotate90(p=0.5),
+        A.OneOf([
+            A.ElasticTransform(alpha=120, sigma=120 * 0.05, alpha_affine=120 * 0.03, p=0.5),
+            A.GridDistortion(p=0.5),
+            A.OpticalDistortion(distort_limit=2, shift_limit=0.5, p=1)                  
+            ], p=0.8),
+        A.CLAHE(p=0.8),
+        A.RandomBrightnessContrast(p=0.8),    
+        A.RandomGamma(p=0.8)
+    ]
+    return A.Compose(train_transform)
+
+def get_val_transform():
+    val_transform = [
+        A.CenterCrop(height=384, width=384, always_apply=True)
+    ]
+    return A.Compose(val_transform)
 
 class RoadSegDataset(Dataset):
     def __init__(self, img_path, mask_path, transform=None, preprocessing=None):
@@ -89,6 +111,18 @@ class RoadSegTestDataset(Dataset):
         return image
 
 
+class DummyDataset(Dataset):
+    def __init__(self, num_samples):
+        self.num_samples = num_samples
+
+    def __len__(self):
+        return self.num_samples
+
+    def __getitem__(self, index):
+        img = torch.rand((3,384,384), dtype=torch.float32)
+        mask = torch.randint(0, 2, (1,384,384))
+        return img, mask
+
 class RoadSegDataModule(pl.LightningDataModule):
     def __init__(self, data_dir="../../data", batch_size=8, val_split=0.1, shuffle=True, random_seed=42, num_workers=4, preprocessing_fn=None):
         self.batch_size = batch_size
@@ -104,26 +138,10 @@ class RoadSegDataModule(pl.LightningDataModule):
         self.train_mask_path = os.path.join(
             data_dir, "processed/training/groundtruth")
         self.test_img_path = os.path.join(data_dir, "processed/test/images")
+    
+        self.train_transform = get_train_transform()
 
-        self.train_transform = A.Compose(
-            [
-                A.Resize(384, 384),
-                A.OneOf(
-                    [
-                        A.HorizontalFlip(p=1),
-                        A.VerticalFlip(p=1),
-                        A.RandomRotate90(p=1),
-                    ],
-                    p=0.75,
-                )
-            ]
-        )
-
-        self.test_transform = A.Compose(
-            [
-                A.Resize(384, 384)
-            ]
-        )
+        self.val_transform = get_val_transform()
 
     def setup(self, stage=None):
         preprocessing_ = []
@@ -135,9 +153,9 @@ class RoadSegDataModule(pl.LightningDataModule):
         self.train_dataset = RoadSegDataset(
             img_path=self.train_img_path, mask_path=self.train_mask_path, transform=self.train_transform, preprocessing=preprocessing)
         self.val_dataset = RoadSegDataset(
-            img_path=self.train_img_path, mask_path=self.train_mask_path, transform=self.test_transform, preprocessing=preprocessing)
+            img_path=self.train_img_path, mask_path=self.train_mask_path, transform=self.val_transform, preprocessing=preprocessing)
         self.test_dataset = RoadSegTestDataset(
-            img_path=self.test_img_path, transform=self.test_transform, preprocessing=preprocessing)
+            img_path=self.test_img_path, transform=self.val_transform, preprocessing=preprocessing)
 
         train_len = len(self.train_dataset)
         idx = list(range(train_len))
