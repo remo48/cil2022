@@ -19,31 +19,34 @@ def get_dummy_dataloader(num_samples, batch_size=8, num_workers=4):
     ds = DummyDataset(num_samples)
     return DataLoader(ds, batch_size=batch_size, num_workers=num_workers)
 
-def save_predictions(preds):
+def save_predictions(batches):
     pred_path = "data/processed/test/predictions"
     os.makedirs(pred_path, exist_ok=True)
 
-    preds = torch.cat(preds, dim=0)
-    preds = (preds*255)
-    #preds_averaged = F.avg_pool2d(preds, kernel_size=16)
-    #preds_imgs = (preds_averaged > 0.25) * 255
+    img_names = []
+    preds = []
+    for names, images in batches:
+        img_names += list(names)
+        preds += images
 
-    for i, img in enumerate(preds):
+    preds = torch.cat(preds, dim=0)
+
+    for name, img in zip(img_names, preds):
+        img = img*255
         img = img.squeeze().numpy()
         img = A.Resize(400, 400, interpolation=cv2.INTER_NEAREST, always_apply=True)(image=img)["image"]
         img = img.astype(np.uint8)
         img = Image.fromarray(img)
-        idx = i + 144
-        img_path = os.path.join(pred_path, "satimage_" + str(idx) + ".png")
+        img_path = os.path.join(pred_path, name)
         img.save(img_path)
 
 def run_experiment():
     seed_everything(1234)
 
-    train = True # Set to true, if you want to train the model
+    train = False # Set to true, if you want to train the model
 
-    encoder = "resnet34"
-    model = SMPModel("FPN", encoder, in_channels=3, out_classes=1)
+    encoder = "resnet50"
+    model = SMPModel("DeepLabV3plus", encoder, in_channels=3, out_classes=1)
 
     datamodule = RoadSegDataModule(
         data_dir="data")
@@ -66,10 +69,10 @@ def run_experiment():
     if train:
         trainer.fit(model, datamodule=datamodule)
     else:
-        model = model.load_from_checkpoint("logs/default_cil2022/10_2asjnsgz/checkpoints/epoch=29-step=509.ckpt")
+        model = model.load_from_checkpoint("logs/checkpoints/epoch=27-step=475.ckpt")
 
-    preds = trainer.predict(model, datamodule=datamodule)
-    save_predictions(preds)
+    pred_batches = trainer.predict(model, datamodule=datamodule)
+    save_predictions(pred_batches)
 
 if __name__ == "__main__":
     run_experiment()

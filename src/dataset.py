@@ -13,15 +13,15 @@ def get_train_transform():
     train_transform = [
         A.Resize(height=384, width=384, always_apply=True),
         A.VerticalFlip(p=0.5),              
-        A.RandomRotate90(p=0.5),
-        A.OneOf([
-            A.ElasticTransform(alpha=120, sigma=120 * 0.05, alpha_affine=120 * 0.03, p=0.5),
-            A.GridDistortion(p=0.5),
-            A.OpticalDistortion(distort_limit=2, shift_limit=0.5, p=1)                  
-            ], p=0.8),
-        A.CLAHE(p=0.8),
-        A.RandomBrightnessContrast(p=0.8),    
-        A.RandomGamma(p=0.8)
+        A.RandomRotate90(p=0.5)
+        # A.OneOf([
+        #     A.ElasticTransform(alpha=120, sigma=120 * 0.05, alpha_affine=120 * 0.03, p=0.5),
+        #     A.GridDistortion(p=0.5),
+        #     A.OpticalDistortion(distort_limit=2, shift_limit=0.5, p=1)                  
+        #     ], p=0.8),
+        # A.CLAHE(p=0.8),
+        # A.RandomBrightnessContrast(p=0.8),    
+        # A.RandomGamma(p=0.8)
     ]
     return A.Compose(train_transform)
 
@@ -93,7 +93,7 @@ class RoadSegTestDataset(Dataset):
             sample = self.preprocessing(image=image)
             image = sample["image"]
 
-        return image
+        return img_name, image
 
 
 class DummyDataset(Dataset):

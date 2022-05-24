@@ -7,7 +7,7 @@ import segmentation_models_pytorch as smp
 from src.utils import get_stats
 
 class SMPModel(LightningModule):
-    def __init__(self, arch, encoder_name, in_channels, out_classes, lr=0.0001, **kwargs):
+    def __init__(self, arch, encoder_name, in_channels, out_classes, lr=0.001, **kwargs):
         super().__init__()
         self.model = smp.create_model(
             arch, encoder_name=encoder_name, in_channels=in_channels, classes=out_classes, **kwargs
@@ -79,12 +79,12 @@ class SMPModel(LightningModule):
         return self.shared_epoch_end(outputs, "val")
 
     def predict_step(self, batch, batch_idx):
-        image = batch
+        img_name, image = batch
         logits_mask = self.forward(image)
 
         prob_mask = logits_mask.sigmoid()
         pred_mask = (prob_mask > 0.5).float()
-        return pred_mask
+        return (img_name, pred_mask)
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
