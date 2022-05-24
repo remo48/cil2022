@@ -9,24 +9,9 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.sampler import SequentialSampler
 
-
-def one_hot_encode(mask, class_colors):
-    num_classes = len(class_colors)
-    one_hot = np.zeros((mask.shape[0], mask.shape[1], num_classes))
-    for i, color in enumerate(class_colors):
-        one_hot[:, :, i][mask == color] = 1
-    return one_hot
-
-
-def one_hot_decode(one_hot, class_colors):
-    x = np.argmax(one_hot, axis=0)
-    for i, color in enumerate(class_colors):
-        x[x == i] = color
-    return x
-
 def get_train_transform():
     train_transform = [
-        A.RandomCrop(height=384, width=384, always_apply=True),
+        A.Resize(height=384, width=384, always_apply=True),
         A.VerticalFlip(p=0.5),              
         A.RandomRotate90(p=0.5),
         A.OneOf([
@@ -42,7 +27,7 @@ def get_train_transform():
 
 def get_val_transform():
     val_transform = [
-        A.CenterCrop(height=384, width=384, always_apply=True)
+        A.Resize(height=384, width=384, always_apply=True)
     ]
     return A.Compose(val_transform)
 
