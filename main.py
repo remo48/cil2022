@@ -43,7 +43,7 @@ def save_predictions(batches):
 def run_experiment():
     seed_everything(1234)
 
-    train = False # Set to true, if you want to train the model
+    train = True # Set to true, if you want to train the model
 
     encoder = "resnet50"
     model = SMPModel("DeepLabV3plus", encoder, in_channels=3, out_classes=1)
@@ -56,7 +56,7 @@ def run_experiment():
     loggers = [wandb_logger, logger] if train else []
 
     log_predictions_callback = LogPredictionsCallback(wandb_logger)
-    checkpoint_callback = ModelCheckpoint("logs/checkpoints", monitor="val_f1", mode="max")
+    checkpoint_callback = ModelCheckpoint(monitor="val_f1", mode="max")
     callbacks = [checkpoint_callback]
 
     trainer = Trainer(
