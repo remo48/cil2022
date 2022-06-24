@@ -64,7 +64,9 @@ def run_experiment():
         default_root_dir="logs",
         logger=loggers,
         callbacks=callbacks,
-        log_every_n_steps=5)
+        log_every_n_steps=5,
+        accelerator="gpu",
+        devices=1)
 
     if train:
         trainer.fit(model, datamodule=datamodule)

@@ -117,6 +117,8 @@ class RoadSegDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
         self.data_dir = data_dir
         self.preprocessing_fn = preprocessing_fn
+        self.prepare_data_per_node = False
+        self._log_hyperparams = False
 
         self.train_img_path = os.path.join(
             data_dir, "processed/training/images")
