@@ -72,88 +72,6 @@ def crop_images():
 
             index += 9
 
-
-    # image_path = os.path.join(FINAL_IMAGE_PATH, "satimage_")
-    # for root, dirs, files in os.walk(IMAGE_PATH, topdown=False):
-    #     for name in files:
-    #         path_in = os.path.join(root, name)
-
-    #         im = Image.open(path_in)
-    #         im = im.crop((150, 150, 1350, 1350))
-
-    #         im.crop((0, 0, 400, 400)).save(image_path + str(index) + ".png", "png", quality=100)
-    #         im.crop((400, 0, 800, 400)).save(image_path + str(index+1) + ".png", "png", quality=100)
-    #         im.crop((800, 0, 1200, 400)).save(image_path + str(index+2) + ".png", "png", quality=100)
-    #         im.crop((0, 400, 400, 800)).save(image_path + str(index+3) + ".png", "png", quality=100)
-    #         im.crop((400, 400, 800, 800)).save(image_path + str(index+4) + ".png", "png", quality=100)
-    #         im.crop((800, 400, 1200, 800)).save(image_path + str(index+5) + ".png", "png", quality=100)
-    #         im.crop((0, 800, 400, 1200)).save(image_path + str(index+6) + ".png", "png", quality=100)
-    #         im.crop((400, 800, 800, 1200)).save(image_path + str(index+7) + ".png", "png", quality=100)
-    #         im.crop((800, 800, 1200, 1200)).save(image_path + str(index+8) + ".png", "png", quality=100)
-
-    #         index += 9
-
-    # index = (len([name for name in os.listdir(FINAL_GROUNDTRUTH_PATH)]))
-
-    # image_path = os.path.join(FINAL_GROUNDTRUTH_PATH, "satimage_")
-    # for root, dirs, files in os.walk(GROUNDTRUTH_PATH, topdown=False):
-    #     for name in files:
-    #         path_in = os.path.join(root, name)
-
-    #         im = Image.open(path_in)
-    #         im = im.crop((150, 150, 1350, 1350))
-
-    #         im.crop((0, 0, 400, 400)).save(image_path + str(index) + ".png", "png", quality=100)
-    #         im.crop((400, 0, 800, 400)).save(image_path + str(index+1) + ".png", "png", quality=100)
-    #         im.crop((800, 0, 1200, 400)).save(image_path + str(index+2) + ".png", "png", quality=100)
-    #         im.crop((0, 400, 400, 800)).save(image_path + str(index+3) + ".png", "png", quality=100)
-    #         im.crop((400, 400, 800, 800)).save(image_path + str(index+4) + ".png", "png", quality=100)
-    #         im.crop((800, 400, 1200, 800)).save(image_path + str(index+5) + ".png", "png", quality=100)
-    #         im.crop((0, 800, 400, 1200)).save(image_path + str(index+6) + ".png", "png", quality=100)
-    #         im.crop((400, 800, 800, 1200)).save(image_path + str(index+7) + ".png", "png", quality=100)
-    #         im.crop((800, 800, 1200, 1200)).save(image_path + str(index+8) + ".png", "png", quality=100)
-
-    #         index += 9
-
-def crop_and_save(path, folder, number):
-    im = Image.open(path)
-    if(im.size != (1500,1500)): 
-        return
-
-    im = im.crop((150, 150, 1350, 1350))
-    print(os.path.splitext(path)[0] + "_1" + ".png")
-    im.crop((0, 0, 400, 400)).save(os.path.splitext(path)[0] + "_1" + ".png", "png", quality=100)
-    im.crop((400, 0, 800, 400)).save(os.path.splitext(path)[0] + "_2" + ".png", "png", quality=100)
-    im.crop((800, 0, 1200, 400)).save(os.path.splitext(path)[0] + "_3" + ".png", "png", quality=100)
-    im.crop((0, 400, 400, 800)).save(os.path.splitext(path)[0] + "_4" + ".png", "png", quality=100)
-    im.crop((400, 400, 800, 800)).save(os.path.splitext(path)[0] + "_5" + ".png", "png", quality=100)
-    im.crop((800, 400, 1200, 800)).save(os.path.splitext(path)[0] + "_6" + ".png", "png", quality=100)
-    im.crop((0, 800, 400, 1200)).save(os.path.splitext(path)[0] + "_7" + ".png", "png", quality=100)
-    im.crop((400, 800, 800, 1200)).save(os.path.splitext(path)[0] + "_8" + ".png", "png", quality=100)
-    im.crop((800, 800, 1200, 1200)).save(os.path.splitext(path)[0] + "_9" + ".png", "png", quality=100)
-
-    os.remove(path)
-
-
-def move_images():
-    # Should not be used
-
-    Path(IMAGE_PATH).mkdir(parents=True, exist_ok=True)
-    Path(GROUNDTRUTH_PATH).mkdir(parents=True, exist_ok=True)
-
-    for root, dirs, files in os.walk(RAW_IMAGE_PATH, topdown=False):
-        for name in files:
-            if(root.endswith("labels")):
-                path = os.path.join(GROUNDTRUTH_PATH, name)
-                print("label", root)
-            else:
-                path = os.path.join(IMAGE_PATH, name)
-                print("image", root)
-
-            outfile = os.path.splitext(path)[0] + ".png"
-            im = Image.open(os.path.join(root, name))
-            im.save(outfile, "png", quality=100)
-
 def main():
     """ Runs data processing scripts to turn raw data from (../external) into
         cleaned data ready to be analyzed (saved in ../processed).
@@ -174,6 +92,7 @@ def main():
         f.extractall(PROCESSED_DATA_PATH)
     
     convert_images()
+    crop_images()
 
 if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -182,6 +101,6 @@ if __name__ == '__main__':
     # not used in this stub but often useful for finding various files
     project_dir = Path(__file__).resolve().parents[2]
 
-    crop_images()
+    main()
 
     
