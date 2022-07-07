@@ -44,12 +44,12 @@ class MassachusettsDataset():
                 if not os.path.exists(member_path) or os.path.isfile(member_path):
                     f.extract(member, self.processed_data_path)
 
-    def process_images(self, threshold = 0.01, remove_intermediate_files=False, force=False):
+    def process_images(self, road_threshold = 0.1, white_threshold=0.3, remove_intermediate_files=False, force=False):
         self.logger.info("Convert images from .tiff to .png")
         self._convert_images()
 
         self.logger.info("Crop images")
-        self._crop_images(threshold=threshold, force=force)
+        self._crop_images(road_threshold=road_threshold, white_threshold=white_threshold, force=force)
 
         if remove_intermediate_files:
             self.logger.info("Remove uncropped images")
@@ -82,7 +82,16 @@ class MassachusettsDataset():
 
                     os.remove(os.path.join(img_path, name))
 
-    def _crop_images(self, threshold=0.01, force=False):
+    def _crop_images(self, road_threshold, white_threshold, force):
+        def road_percentage(groundtruth):
+            gt_np = np.asarray(groundtruth)
+            return np.count_nonzero(gt_np) / gt_np.size
+
+        def whitespace_percentage(image):
+            img_np = np.asarray(image)
+            return np.count_nonzero(np.all(img_np==[255,255,255], axis=2)) / img_np.size
+
+
         if force:
             shutil.rmtree(self.final_image_path)
             shutil.rmtree(self.final_groundtruth_path)
@@ -101,19 +110,17 @@ class MassachusettsDataset():
         for name in tqdm(os.listdir(self.image_path)):
             image_in = os.path.join(self.image_path, name)
             image = Image.open(image_in)
-            image.resize()
-            image = image.crop((150, 150, 1350, 1350))
+            image = image.resize(size=(3200, 3200))
             groundtruth_in = os.path.join(self.groundtruth_path, name)
             groundtruth = Image.open(groundtruth_in)
-            groundtruth = groundtruth.crop((150, 150, 1350, 1350))
+            groundtruth = groundtruth.resize(size=(3200, 3200), resample=Image.NEAREST)
 
-            for i in range(0, 1200, 400):
-                for j in range(0, 1200, 400):
+            for i in range(0, 3200, 400):
+                for j in range(0, 3200, 400):
                     partial_gt = groundtruth.crop((i, j, i+400, j+400))
                     if partial_gt.getbbox():
-                        partial_gt_np = np.asarray(partial_gt)
-                        if (np.count_nonzero(partial_gt_np) / partial_gt_np.size) > threshold:
-                            partial_img = image.crop((i, j, i+400, j+400))
+                        partial_img = image.crop((i, j, i+400, j+400))
+                        if road_percentage(partial_gt) > road_threshold and whitespace_percentage(partial_img) < white_threshold:
                             partial_img.save(image_path + str(index) + ".png", "png", quality=100)
                             partial_gt.save(groundtruth_path + str(index) + ".png", "png", quality=100)
                             index += 1
@@ -124,7 +131,7 @@ def main():
         cleaned data ready to be analyzed (saved in ../processed).
     """
     dataset = MassachusettsDataset("data")
-    dataset.download()
+    #dataset.download()
     dataset.process_images(force = True)
 
 if __name__ == '__main__':
