@@ -40,7 +40,7 @@ def save_predictions(batches):
         img_path = os.path.join(pred_path, name)
         img.save(img_path)
 
-def run_experiment():
+def run_experiment(massachusetts=False):
     seed_everything(1234)
 
     train = True # Set to true, if you want to train the model
@@ -49,7 +49,8 @@ def run_experiment():
     model = SMPModel("DeepLabV3plus", encoder, in_channels=3, out_classes=1)
 
     datamodule = RoadSegDataModule(
-        data_dir="data")
+        data_dir="data",
+        massachusetts=massachusetts)
 
     wandb_logger = WandbLogger(project="cil2022")
     logger = CSVLogger(save_dir="logs")
@@ -77,4 +78,5 @@ def run_experiment():
     save_predictions(pred_batches)
 
 if __name__ == "__main__":
-    run_experiment()
+    massachusetts = True
+    run_experiment(massachusetts)
