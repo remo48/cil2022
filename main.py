@@ -86,5 +86,5 @@ def run_experiment(massachusetts=False):
     save_predictions(pred_batches)
 
 if __name__ == "__main__":
-    massachusetts = True
+    massachusetts = False
     run_experiment(massachusetts)
