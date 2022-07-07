@@ -60,14 +60,22 @@ def run_experiment(massachusetts=False):
     checkpoint_callback = ModelCheckpoint(monitor="val_f1", mode="max")
     callbacks = [checkpoint_callback]
 
-    trainer = Trainer(
-        max_epochs=30,
-        default_root_dir="logs",
-        logger=loggers,
-        callbacks=callbacks,
-        log_every_n_steps=5,
-        accelerator="gpu",
-        devices=1)
+    if torch.cuda.is_available():
+        trainer = Trainer(
+            max_epochs=30,
+            default_root_dir="logs",
+            logger=loggers,
+            callbacks=callbacks,
+            log_every_n_steps=5,
+            accelerator="gpu",
+            devices=1)
+    else:
+        trainer = Trainer(
+            max_epochs=30,
+            default_root_dir="logs",
+            logger=loggers,
+            callbacks=callbacks,
+            log_every_n_steps=5)
 
     if train:
         trainer.fit(model, datamodule=datamodule)

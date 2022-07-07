@@ -120,21 +120,19 @@ class RoadSegDataModule(pl.LightningDataModule):
         self.prepare_data_per_node = False
         self._log_hyperparams = False
 
+        subfolder = "training"
         if massachusetts:
-            self.train_img_path = os.path.join(
-                data_dir, "processed/massachusetts/training/images")
-            self.train_mask_path = os.path.join(
-                data_dir, "processed/training/massachusetts/groundtruth")
-            self.test_img_path = os.path.join(data_dir, "processed/test/images")
-        else:
-            self.train_img_path = os.path.join(
-                data_dir, "processed/training/images")
-            self.train_mask_path = os.path.join(
-                data_dir, "processed/training/groundtruth")
-            self.test_img_path = os.path.join(data_dir, "processed/test/images")
-    
-        self.train_transform = get_train_transform()
+            subfolder = "massachusetts"
 
+        self.train_img_path = os.path.join(
+            data_dir, "processed", subfolder, "images")
+        self.train_mask_path = os.path.join(
+            data_dir, "processed", subfolder, "groundtruth")
+    
+        self.test_img_path = os.path.join(data_dir, "processed", "test", "images")
+
+        self.train_transform = get_train_transform()
+        
         self.val_transform = get_val_transform()
 
     def setup(self, stage=None):
