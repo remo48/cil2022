@@ -124,7 +124,7 @@ def main():
         cleaned data ready to be analyzed (saved in ../processed).
     """
     dataset = MassachusettsDataset("data")
-    #dataset.download()
+    dataset.download()
     dataset.process_images(force = True)
 
 if __name__ == '__main__':

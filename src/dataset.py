@@ -109,7 +109,7 @@ class DummyDataset(Dataset):
         return img, mask
 
 class RoadSegDataModule(pl.LightningDataModule):
-    def __init__(self, data_dir="../../data", batch_size=8, val_split=0.1, shuffle=True, random_seed=42, num_workers=4, preprocessing_fn=None):
+    def __init__(self, data_dir="../../data", batch_size=8, val_split=0.1, shuffle=True, random_seed=42, num_workers=4, preprocessing_fn=None, massachusetts=False):
         self.batch_size = batch_size
         self.val_split = val_split
         self.shuffle = shuffle
@@ -120,14 +120,19 @@ class RoadSegDataModule(pl.LightningDataModule):
         self.prepare_data_per_node = False
         self._log_hyperparams = False
 
-        self.train_img_path = os.path.join(
-            data_dir, "processed/training/images")
-        self.train_mask_path = os.path.join(
-            data_dir, "processed/training/groundtruth")
-        self.test_img_path = os.path.join(data_dir, "processed/test/images")
-    
-        self.train_transform = get_train_transform()
+        subfolder = "training"
+        if massachusetts:
+            subfolder = "massachusetts"
 
+        self.train_img_path = os.path.join(
+            data_dir, "processed", subfolder, "images")
+        self.train_mask_path = os.path.join(
+            data_dir, "processed", subfolder, "groundtruth")
+    
+        self.test_img_path = os.path.join(data_dir, "processed", "test", "images")
+
+        self.train_transform = get_train_transform()
+        
         self.val_transform = get_val_transform()
 
     def setup(self, stage=None):
