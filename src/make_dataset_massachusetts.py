@@ -4,6 +4,7 @@ import shutil
 import zipfile
 from pathlib import Path
 from PIL import Image
+import numpy as np
 from tqdm import tqdm
 
 from kaggle.api.kaggle_api_extended import KaggleApi
@@ -27,31 +28,41 @@ class MassachusettsDataset():
     def download(self):
         Path(self.raw_data_path).mkdir(parents=True, exist_ok=True)
         Path(self.processed_data_path).mkdir(parents=True, exist_ok=True)
-
-        self.logger.info("Download dataset to %s", self.raw_data_path)
-        api = KaggleApi()
-        api.authenticate()
-        api.dataset_download_files('balraj98/massachusetts-roads-dataset', path=self.raw_data_path)
+        zip_file = os.path.join(self.raw_data_path, 'massachusetts-roads-dataset.zip')
+        if os.path.isfile(zip_file):
+            self.logger.info("Skip download as file is already downloaded")
+        else:
+            self.logger.info("Download dataset to %s", self.raw_data_path)
+            api = KaggleApi()
+            api.authenticate()
+            api.dataset_download_files('balraj98/massachusetts-roads-dataset', path=self.raw_data_path)
 
         self.logger.info("Extract files to %s", self.processed_data_path)
-        zip_file = os.path.join(self.raw_data_path, 'massachusetts-roads-dataset.zip')
         with zipfile.ZipFile(zip_file, 'r') as f:
-            f.extractall(self.processed_data_path)
+            for member in f.namelist():
+                member_path = os.path.join(self.processed_data_path, member)
+                if not os.path.exists(member_path) or os.path.isfile(member_path):
+                    f.extract(member, self.processed_data_path)
 
-    def process_images(self):
+    def process_images(self, threshold = 0.01, remove_intermediate_files=False, force=False):
         self.logger.info("Convert images from .tiff to .png")
         self._convert_images()
 
         self.logger.info("Crop images")
-        self._crop_images()
+        self._crop_images(threshold=threshold, force=force)
 
-        self.logger.info("Remove uncropped images")
-        shutil.rmtree(self.raw_image_path)
+        if remove_intermediate_files:
+            self.logger.info("Remove uncropped images")
+            shutil.rmtree(self.raw_image_path)
 
 
     def _convert_images(self):
         Path(self.image_path).mkdir(parents=True, exist_ok=True)
         Path(self.groundtruth_path).mkdir(parents=True, exist_ok=True)
+
+        if len(os.listdir(self.image_path)) > 0 or len(os.listdir(self.groundtruth_path)) > 0:
+            self.logger.info("Skip converting images as images are already converted")
+            return
 
         for d in os.listdir(self.raw_image_path):
             img_path = os.path.join(self.raw_image_path, d)
@@ -71,43 +82,41 @@ class MassachusettsDataset():
 
                     os.remove(os.path.join(img_path, name))
 
-    def _crop_images(self):
+    def _crop_images(self, threshold=0.01, force=False):
+        if force:
+            shutil.rmtree(self.final_image_path)
+            shutil.rmtree(self.final_groundtruth_path)
+
         Path(self.final_image_path).mkdir(parents=True, exist_ok=True)
         Path(self.final_groundtruth_path).mkdir(parents=True, exist_ok=True)
-        index = (len([name for name in os.listdir(self.final_image_path)]))
 
+        if (len(os.listdir(self.final_image_path)) > 0 or len(os.listdir(self.final_groundtruth_path)) > 0):
+            self.logger.info("Skip cropping images as images are already cropped")
+            return
+
+
+        index = 0
         image_path = os.path.join(self.final_image_path, "satimage_")
         groundtruth_path = os.path.join(self.final_groundtruth_path, "satimage_")
         for name in tqdm(os.listdir(self.image_path)):
             image_in = os.path.join(self.image_path, name)
             image = Image.open(image_in)
+            image.resize()
             image = image.crop((150, 150, 1350, 1350))
-
-            image.crop((0, 0, 400, 400)).save(image_path + str(index) + ".png", "png", quality=100)
-            image.crop((400, 0, 800, 400)).save(image_path + str(index+1) + ".png", "png", quality=100)
-            image.crop((800, 0, 1200, 400)).save(image_path + str(index+2) + ".png", "png", quality=100)
-            image.crop((0, 400, 400, 800)).save(image_path + str(index+3) + ".png", "png", quality=100)
-            image.crop((400, 400, 800, 800)).save(image_path + str(index+4) + ".png", "png", quality=100)
-            image.crop((800, 400, 1200, 800)).save(image_path + str(index+5) + ".png", "png", quality=100)
-            image.crop((0, 800, 400, 1200)).save(image_path + str(index+6) + ".png", "png", quality=100)
-            image.crop((400, 800, 800, 1200)).save(image_path + str(index+7) + ".png", "png", quality=100)
-            image.crop((800, 800, 1200, 1200)).save(image_path + str(index+8) + ".png", "png", quality=100)
-
             groundtruth_in = os.path.join(self.groundtruth_path, name)
             groundtruth = Image.open(groundtruth_in)
             groundtruth = groundtruth.crop((150, 150, 1350, 1350))
 
-            groundtruth.crop((0, 0, 400, 400)).save(groundtruth_path + str(index) + ".png", "png", quality=100)
-            groundtruth.crop((400, 0, 800, 400)).save(groundtruth_path + str(index+1) + ".png", "png", quality=100)
-            groundtruth.crop((800, 0, 1200, 400)).save(groundtruth_path + str(index+2) + ".png", "png", quality=100)
-            groundtruth.crop((0, 400, 400, 800)).save(groundtruth_path + str(index+3) + ".png", "png", quality=100)
-            groundtruth.crop((400, 400, 800, 800)).save(groundtruth_path + str(index+4) + ".png", "png", quality=100)
-            groundtruth.crop((800, 400, 1200, 800)).save(groundtruth_path + str(index+5) + ".png", "png", quality=100)
-            groundtruth.crop((0, 800, 400, 1200)).save(groundtruth_path + str(index+6) + ".png", "png", quality=100)
-            groundtruth.crop((400, 800, 800, 1200)).save(groundtruth_path + str(index+7) + ".png", "png", quality=100)
-            groundtruth.crop((800, 800, 1200, 1200)).save(groundtruth_path + str(index+8) + ".png", "png", quality=100)
-
-            index += 9
+            for i in range(0, 1200, 400):
+                for j in range(0, 1200, 400):
+                    partial_gt = groundtruth.crop((i, j, i+400, j+400))
+                    if partial_gt.getbbox():
+                        partial_gt_np = np.asarray(partial_gt)
+                        if (np.count_nonzero(partial_gt_np) / partial_gt_np.size) > threshold:
+                            partial_img = image.crop((i, j, i+400, j+400))
+                            partial_img.save(image_path + str(index) + ".png", "png", quality=100)
+                            partial_gt.save(groundtruth_path + str(index) + ".png", "png", quality=100)
+                            index += 1
 
 
 def main():
@@ -116,7 +125,7 @@ def main():
     """
     dataset = MassachusettsDataset("data")
     #dataset.download()
-    dataset.process_images()
+    dataset.process_images(force = True)
 
 if __name__ == '__main__':
     # not used in this stub but often useful for finding various files
