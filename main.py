@@ -40,17 +40,15 @@ def save_predictions(batches):
         img_path = os.path.join(pred_path, name)
         img.save(img_path)
 
-def run_experiment(massachusetts=False):
+def run_experiment(finetune=False, train=True):
     seed_everything(1234)
-
-    train = True # Set to true, if you want to train the model
-
-    encoder = "resnet50"
+    
+    encoder = "efficientnet-b2"
     model = SMPModel("DeepLabV3plus", encoder, in_channels=3, out_classes=1)
 
     datamodule = RoadSegDataModule(
         data_dir="data",
-        massachusetts=massachusetts)
+        massachusetts=True)
 
     wandb_logger = WandbLogger(project="cil2022")
     logger = CSVLogger(save_dir="logs")
@@ -62,12 +60,13 @@ def run_experiment(massachusetts=False):
 
     if torch.cuda.is_available():
         trainer = Trainer(
-            max_epochs=30,
+            max_epochs=250,
             default_root_dir="logs",
             logger=loggers,
             callbacks=callbacks,
             log_every_n_steps=5,
             accelerator="gpu",
+            auto_lr_find=True,
             devices=1)
     else:
         trainer = Trainer(
@@ -80,11 +79,17 @@ def run_experiment(massachusetts=False):
     if train:
         trainer.fit(model, datamodule=datamodule)
     else:
-        model = model.load_from_checkpoint("logs/checkpoints/epoch=27-step=475.ckpt")
+        model = model.load_from_checkpoint("logs\cil2022_lightning_logs\ssb8etgn_19\checkpoints\epoch=28-step=35554.ckpt")
+        
+    if finetune:
+        datamodule = RoadSegDataModule(
+            data_dir="data",
+            massachusetts=False)
+        model.lr = 0.0001
+        trainer.fit(model, datamodule=datamodule)
 
     pred_batches = trainer.predict(model, datamodule=datamodule)
     save_predictions(pred_batches)
 
 if __name__ == "__main__":
-    massachusetts = False
-    run_experiment(massachusetts)
+    run_experiment(finetune=True, train=False)
