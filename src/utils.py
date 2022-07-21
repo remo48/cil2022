@@ -1,9 +1,11 @@
 import numpy as np
 import torch
+from importlib import import_module
 from torch.nn import functional as F
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning import Callback
 import wandb
+
 
 def get_stats(pr_masks: torch.Tensor, gt_masks: torch.Tensor, patch_size=16, foreground_threshold=0.25):
     """Compute true positive, false positive, false negative, true negative 'patches'
@@ -33,6 +35,32 @@ def get_stats(pr_masks: torch.Tensor, gt_masks: torch.Tensor, patch_size=16, for
 
     return tp, fp, fn, tn
 
+
+def object_from_dict(d, **default_kwargs):
+    """Create an object from a config dict
+
+    Args:
+        d: a dictionary containing the description of the object to be created. At least 'type' must be present.
+    """
+    kwargs = d.copy()
+    object_type = kwargs.pop("type")
+    for name, value in default_kwargs.items():
+        kwargs.setdefault(name, value)
+    try:
+        module_path, class_name = object_type.rsplit('.', 1)
+    except ValueError:
+        msg = "%s doesn't look like a module path" % object_type
+        raise ImportError(msg)
+
+    module = import_module(module_path)
+    try:
+        return getattr(module, class_name)(**kwargs)
+    except AttributeError:
+        msg = 'Module "%s" does not define a "%s" attribute/class' % (
+            module_path, class_name)
+        raise ImportError(msg)
+
+
 class LogPredictionsCallback(Callback):
     """Callback to log example images with predictions and grountruth mask to wandb
 
@@ -40,6 +68,7 @@ class LogPredictionsCallback(Callback):
         wandb_logger: an instance of a wandb logger
         num_samples: number of samples to log per validation step
     """
+
     def __init__(self, wandb_logger: WandbLogger, num_samples=4):
         self.logger = wandb_logger
         self.num_samples = num_samples
@@ -49,7 +78,7 @@ class LogPredictionsCallback(Callback):
             return wandb.Image(image, masks={
                 "predictions": {
                     "mask_data": pr_mask
-                }, 
+                },
                 "groundtruth": {
                     "mask_data": gt_mask
                 }})
@@ -64,9 +93,10 @@ class LogPredictionsCallback(Callback):
                 pl_module.train()
             pr_masks = (pr_masks.sigmoid() > 0.5).float()
 
-            images = [img.numpy().transpose(1,2,0) for img in images[:n]]
+            images = [img.numpy().transpose(1, 2, 0) for img in images[:n]]
             gt_masks = [mask.numpy().squeeze() for mask in gt_masks[:n]]
             pr_masks = [mask.numpy().squeeze() for mask in pr_masks[:n]]
 
-            data = [to_mask_image(img, pr, gt) for img, pr, gt in zip(images, gt_masks, pr_masks)]
+            data = [to_mask_image(img, pr, gt)
+                    for img, pr, gt in zip(images, gt_masks, pr_masks)]
             self.logger.log_metrics({"examples": data})

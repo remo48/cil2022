@@ -9,27 +9,30 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.sampler import SequentialSampler
 
+
 def get_train_transform():
     train_transform = [
         A.Resize(height=384, width=384, always_apply=True),
-        A.VerticalFlip(p=0.5),              
+        A.VerticalFlip(p=0.5),
         A.RandomRotate90(p=0.5)
         # A.OneOf([
         #     A.ElasticTransform(alpha=120, sigma=120 * 0.05, alpha_affine=120 * 0.03, p=0.5),
         #     A.GridDistortion(p=0.5),
-        #     A.OpticalDistortion(distort_limit=2, shift_limit=0.5, p=1)                  
+        #     A.OpticalDistortion(distort_limit=2, shift_limit=0.5, p=1)
         #     ], p=0.8),
         # A.CLAHE(p=0.8),
-        # A.RandomBrightnessContrast(p=0.8),    
+        # A.RandomBrightnessContrast(p=0.8),
         # A.RandomGamma(p=0.8)
     ]
     return A.Compose(train_transform)
+
 
 def get_val_transform():
     val_transform = [
         A.Resize(height=384, width=384, always_apply=True)
     ]
     return A.Compose(val_transform)
+
 
 class RoadSegDataset(Dataset):
     def __init__(self, img_path, mask_path, transform=None, preprocessing=None):
@@ -38,7 +41,7 @@ class RoadSegDataset(Dataset):
         self.transform = transform
         self.preprocessing = preprocessing
         self.img_names = os.listdir(img_path)
-    
+
     def _preprocess_mask(self, mask):
         mask = mask.astype(np.float32)
         mask[mask == 255] = 1.0
@@ -104,9 +107,10 @@ class DummyDataset(Dataset):
         return self.num_samples
 
     def __getitem__(self, index):
-        img = torch.rand((3,384,384), dtype=torch.float32)
-        mask = torch.randint(0, 2, (1,384,384))
+        img = torch.rand((3, 384, 384), dtype=torch.float32)
+        mask = torch.randint(0, 2, (1, 384, 384))
         return img, mask
+
 
 class RoadSegDataModule(pl.LightningDataModule):
     def __init__(self, data_dir="../../data", batch_size=8, val_split=0.1, shuffle=True, random_seed=42, num_workers=4, preprocessing_fn=None, massachusetts=False):
@@ -128,11 +132,12 @@ class RoadSegDataModule(pl.LightningDataModule):
             data_dir, "processed", subfolder, "images")
         self.train_mask_path = os.path.join(
             data_dir, "processed", subfolder, "groundtruth")
-    
-        self.test_img_path = os.path.join(data_dir, "processed", "test", "images")
+
+        self.test_img_path = os.path.join(
+            data_dir, "processed", "test", "images")
 
         self.train_transform = get_train_transform()
-        
+
         self.val_transform = get_val_transform()
 
     def setup(self, stage=None):

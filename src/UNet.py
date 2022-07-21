@@ -1,28 +1,24 @@
 import torch
 from pytorch_lightning import LightningModule
 
-
 import segmentation_models_pytorch as smp
 
-from src.utils import get_stats
+from src.utils import get_stats, object_from_dict
 
 class SMPModel(LightningModule):
-    def __init__(self, arch, encoder_name, in_channels, out_classes, lr=0.001, **kwargs):
+    def __init__(self, hparams):
         super().__init__()
-        self.model = smp.create_model(
-            arch, encoder_name=encoder_name, in_channels=in_channels, classes=out_classes, **kwargs
-        )
-
-        self.lr = lr
+        self.hparams.update(hparams)
         self.save_hyperparameters()
+        self.model = object_from_dict(hparams["model"])
 
         # preprocessing parameteres for image
-        params = smp.encoders.get_preprocessing_params(encoder_name)
+        params = smp.encoders.get_preprocessing_params(hparams["model"]["encoder_name"])
         self.register_buffer("std", torch.tensor(params["std"]).view(1, 3, 1, 1))
         self.register_buffer("mean", torch.tensor(params["mean"]).view(1, 3, 1, 1))
 
-        # for image segmentation dice loss could be the best first choice
-        self.loss_fn = smp.losses.DiceLoss(smp.losses.BINARY_MODE, from_logits=True)
+        self.loss_fn = object_from_dict(hparams["loss_fn"])
+
 
     def forward(self, image):
         # normalize image here
@@ -87,6 +83,14 @@ class SMPModel(LightningModule):
         return (img_name, pred_mask)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, self.trainer.max_epochs, 0)
-        return [optimizer], [scheduler]
+        optimizer = object_from_dict(self.hparams["optimizer"],
+            params=self.parameters())
+        scheduler = object_from_dict(self.hparams["scheduler"],
+            optimizer=optimizer)
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "monitor": "val_f1"
+            }
+        }
