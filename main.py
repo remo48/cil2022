@@ -54,7 +54,7 @@ def run_experiment(hparams):
     if "resume_from_checkpoint" in hparams:
         model = model.load_from_checkpoint(hparams["resume_from_checkpoint"])
 
-    experiment_name = "_".join(hparams["experiment_name"], time.strftime("%Y%m%d_%H%M%S"))
+    experiment_name = "_".join([time.strftime("%Y%m%d_%H%M%S"), hparams["experiment_name"]])
 
     wandb_logger = WandbLogger(
         name=experiment_name, project="cil2022")
