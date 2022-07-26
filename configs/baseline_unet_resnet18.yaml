@@ -1,15 +1,15 @@
 random_seed: 1234
 
-experiment_name: "default_config"
+experiment_name: "baseline_unet_resnet18"
 
 train: True
-predict: False
+predict: True
 
 #resume_from_checkpoint: logs/cil2022_default/ycwf0jpw_21/checkpoints/epoch=118-step=2022.ckpt
 
 model:
-  type: segmentation_models_pytorch.DeepLabV3Plus
-  encoder_name: mobilenet_v2
+  type: segmentation_models_pytorch.Unet
+  encoder_name: resnet18
   encoder_weights: imagenet
   in_channels: 3
   classes: 1
@@ -22,7 +22,7 @@ trainer:
   #devices: 1
 
 loss_fn:
-  type: segmentation_models_pytorch.losses.JaccardLoss
+  type: segmentation_models_pytorch.losses.DiceLoss
   mode: binary
   from_logits: True
 
@@ -44,10 +44,4 @@ dataset:
   shuffle: True
   num_workers: 4
   massachusetts: False
-  augmentations:
-    - 
-      type: albumentations.VerticalFlip
-      p: 0.5
-    -
-      type: albumentations.RandomRotate90
-      p: 0.5
+  augmentations: [] # no augmentation

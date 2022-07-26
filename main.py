@@ -14,15 +14,9 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import CSVLogger, WandbLogger
 from torch.utils.data import DataLoader
 
-from src.dataset import DummyDataset, RoadSegDataModule
+from src.dataset import RoadSegDataModule
 from src.UNet import SMPModel
 from src.utils import object_from_dict
-
-
-def get_dummy_dataloader(num_samples, batch_size=8, num_workers=4):
-    ds = DummyDataset(num_samples)
-    return DataLoader(ds, batch_size=batch_size, num_workers=num_workers)
-
 
 def save_predictions(batches):
     pred_path = "data/processed/test/predictions"
