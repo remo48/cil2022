@@ -9,21 +9,23 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.sampler import SequentialSampler
 
+from src.utils import object_from_dict
 
-def get_train_transform():
+
+def get_train_transform(augmentations):
+    print(augmentations)
     train_transform = [
-        A.Resize(height=384, width=384, always_apply=True),
-        A.VerticalFlip(p=0.5),
-        A.RandomRotate90(p=0.5)
-        # A.OneOf([
-        #     A.ElasticTransform(alpha=120, sigma=120 * 0.05, alpha_affine=120 * 0.03, p=0.5),
-        #     A.GridDistortion(p=0.5),
-        #     A.OpticalDistortion(distort_limit=2, shift_limit=0.5, p=1)
-        #     ], p=0.8),
-        # A.CLAHE(p=0.8),
-        # A.RandomBrightnessContrast(p=0.8),
-        # A.RandomGamma(p=0.8)
+        A.Resize(height=384, width=384, always_apply=True)
     ]
+    if augmentations is not None:
+        for a in augmentations:
+            train_transform.append(object_from_dict(a))
+    else:
+        train_transform += [
+            A.VerticalFlip(p=0.5),
+            A.RandomRotate90(p=0.5)
+        ]
+
     return A.Compose(train_transform)
 
 
@@ -99,21 +101,8 @@ class RoadSegTestDataset(Dataset):
         return img_name, image
 
 
-class DummyDataset(Dataset):
-    def __init__(self, num_samples):
-        self.num_samples = num_samples
-
-    def __len__(self):
-        return self.num_samples
-
-    def __getitem__(self, index):
-        img = torch.rand((3, 384, 384), dtype=torch.float32)
-        mask = torch.randint(0, 2, (1, 384, 384))
-        return img, mask
-
-
 class RoadSegDataModule(pl.LightningDataModule):
-    def __init__(self, data_dir="../../data", batch_size=8, val_split=0.1, shuffle=True, random_seed=42, num_workers=4, preprocessing_fn=None, massachusetts=False):
+    def __init__(self, data_dir="../../data", batch_size=8, val_split=0.1, shuffle=True, random_seed=42, num_workers=4, preprocessing_fn=None, massachusetts=False, augmentations=None):
         self.batch_size = batch_size
         self.val_split = val_split
         self.shuffle = shuffle
@@ -136,7 +125,7 @@ class RoadSegDataModule(pl.LightningDataModule):
         self.test_img_path = os.path.join(
             data_dir, "processed", "test", "images")
 
-        self.train_transform = get_train_transform()
+        self.train_transform = get_train_transform(augmentations=augmentations)
 
         self.val_transform = get_val_transform()
 
