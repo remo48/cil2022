@@ -5,34 +5,42 @@ import cv2
 import numpy as np
 import pytorch_lightning as pl
 from albumentations.pytorch import ToTensorV2
-import torch
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.sampler import SequentialSampler
 
 from src.utils import object_from_dict
 
 
-def get_train_transform(augmentations):
-    print(augmentations)
-    train_transform = [
-        A.Resize(height=384, width=384, always_apply=True)
-    ]
+def get_train_transform(augmentations, use_small):
+    train_transform = []
+    if use_small:
+        train_transform.append(
+            A.Resize(height=192, width=192, always_apply=True))
+
     if augmentations is not None:
         for a in augmentations:
             train_transform.append(object_from_dict(a))
     else:
         train_transform += [
-            A.VerticalFlip(p=0.5),
-            A.RandomRotate90(p=0.5)
+            A.OneOf(
+                [
+                    A.HorizontalFlip(p=1),
+                    A.VerticalFlip(p=1),
+                    A.RandomRotate90(p=1),
+                ],
+                p=0.75,
+            )
         ]
 
     return A.Compose(train_transform)
 
 
-def get_val_transform():
-    val_transform = [
-        A.Resize(height=384, width=384, always_apply=True)
-    ]
+def get_val_transform(use_small):
+    val_transform = []
+    if use_small:
+        val_transform.append(
+            A.Resize(height=192, width=192, always_apply=True))
+
     return A.Compose(val_transform)
 
 
@@ -102,7 +110,18 @@ class RoadSegTestDataset(Dataset):
 
 
 class RoadSegDataModule(pl.LightningDataModule):
-    def __init__(self, data_dir="../../data", batch_size=8, val_split=0.1, shuffle=True, random_seed=42, num_workers=4, preprocessing_fn=None, massachusetts=False, augmentations=None):
+    def __init__(self,
+                 data_dir="../../data",
+                 batch_size=8,
+                 val_split=0.1,
+                 shuffle=True,
+                 random_seed=42,
+                 num_workers=4,
+                 preprocessing_fn=None,
+                 massachusetts=False,
+                 use_small_images=False,
+                 augmentations=None):
+
         self.batch_size = batch_size
         self.val_split = val_split
         self.shuffle = shuffle
@@ -118,16 +137,16 @@ class RoadSegDataModule(pl.LightningDataModule):
             subfolder = "massachusetts"
 
         self.train_img_path = os.path.join(
-            data_dir, "processed", subfolder, "images")
+            data_dir, "processed", subfolder, "images" + ("_small" if use_small_images else ""))
         self.train_mask_path = os.path.join(
-            data_dir, "processed", subfolder, "groundtruth")
+            data_dir, "processed", subfolder, "groundtruth" + ("_small" if use_small_images else ""))
 
         self.test_img_path = os.path.join(
             data_dir, "processed", "test", "images")
 
-        self.train_transform = get_train_transform(augmentations=augmentations)
-
-        self.val_transform = get_val_transform()
+        self.train_transform = get_train_transform(
+            augmentations=augmentations, use_small=use_small_images)
+        self.val_transform = get_val_transform(use_small=use_small_images)
 
     def setup(self, stage=None):
         preprocessing_ = []

@@ -33,8 +33,6 @@ def save_predictions(batches):
     for name, img in zip(img_names, preds):
         img = img*255
         img = img.squeeze().numpy()
-        img = A.Resize(400, 400, interpolation=cv2.INTER_NEAREST,
-                       always_apply=True)(image=img)["image"]
         img = img.astype(np.uint8)
         img = Image.fromarray(img)
         img_path = os.path.join(pred_path, name)
