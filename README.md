@@ -73,7 +73,7 @@ If the credentials are set correctly, the dataset is downloaded and extracted to
     
 ## Used Models
 
-We provide checkpoints of the models we used in https://polybox.ethz.ch/index.php/s/73CcJ2tB383QydK
+We provide checkpoints of the models we used in https://polybox.ethz.ch/index.php/s/WyJ6tidrkkB4mBm
 
 ## Authors
 
