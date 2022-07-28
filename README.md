@@ -70,6 +70,10 @@ If the credentials are set correctly, the dataset is downloaded and extracted to
     │       └── visualize.py
     │
     └── tox.ini            <- tox file with settings for running tox; see tox.readthedocs.io
+    
+## Used Models
+
+We provide checkpoints of the models we used in https://polybox.ethz.ch/index.php/s/73CcJ2tB383QydK
 
 ## Authors
 
