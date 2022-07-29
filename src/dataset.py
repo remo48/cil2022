@@ -11,17 +11,21 @@ from torch.utils.data.sampler import SequentialSampler
 from src.utils import object_from_dict
 
 
-def get_train_transform(augmentations, use_small):
+def get_train_transform(augmentations, use_small, output_stride):
     """Returns the transformations used for training images
 
     Args:
         augmentations: A list of dicts containing the configuration for training augmentations
         use_small: A boolean indicating if small images (200x200) are used
     """
-    train_transform = []
-    if use_small:
-        train_transform.append(
-            A.Resize(height=192, width=192, always_apply=True))
+    size = 200 if use_small else 400
+    new_size = (size // output_stride + 1) * output_stride if size % output_stride != 0 else size
+
+    if (size != new_size):
+        f"Input shape ({size}, {size}) not compatible with encoder. Expected image size "
+        f"divisible by {output_stride}. Padding images to ({new_size}, {new_size})"
+
+    train_transform = [A.PadIfNeeded(new_size, new_size)]
 
     if augmentations is not None:
         for a in augmentations:
@@ -41,16 +45,15 @@ def get_train_transform(augmentations, use_small):
     return A.Compose(train_transform)
 
 
-def get_val_transform(use_small):
+def get_val_transform(use_small, output_stride):
     """Returns the transformations used for validation and test images
 
     Args:
-        use_small: A boolean indicating if small images (200x200) are used
+        size: Optional dimension for image resizing
     """
-    val_transform = []
-    if use_small:
-        val_transform.append(
-            A.Resize(height=192, width=192, always_apply=True))
+    size = 200 if use_small else 400
+    new_size = (size // output_stride + 1) * output_stride if size % output_stride != 0 else size
+    val_transform = [A.PadIfNeeded(new_size, new_size)]
 
     return A.Compose(val_transform)
 
@@ -131,7 +134,8 @@ class RoadSegDataModule(pl.LightningDataModule):
                  preprocessing_fn=None,
                  massachusetts=False,
                  use_small_images=False,
-                 augmentations=None):
+                 augmentations=None,
+                 output_stride=32):
 
         self.batch_size = batch_size
         self.val_split = val_split
@@ -156,8 +160,8 @@ class RoadSegDataModule(pl.LightningDataModule):
             data_dir, "processed", "test", "images")
 
         self.train_transform = get_train_transform(
-            augmentations=augmentations, use_small=use_small_images)
-        self.val_transform = get_val_transform(use_small=use_small_images)
+            augmentations=augmentations, use_small=use_small_images, output_stride=output_stride)
+        self.val_transform = get_val_transform(use_small=use_small_images, output_stride=output_stride)
 
     def setup(self, stage=None):
         preprocessing_ = []

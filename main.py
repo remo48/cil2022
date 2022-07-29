@@ -18,6 +18,7 @@ from src.dataset import RoadSegDataModule
 from src.UNet import SMPModel
 from src.utils import object_from_dict
 
+
 def save_predictions(batches):
     pred_path = "data/processed/test/predictions"
     os.makedirs(pred_path, exist_ok=True)
@@ -33,6 +34,7 @@ def save_predictions(batches):
     for name, img in zip(img_names, preds):
         img = img*255
         img = img.squeeze().numpy()
+        img = A.CenterCrop(400, 400, always_apply=True)(image=img)["image"]
         img = img.astype(np.uint8)
         img = Image.fromarray(img)
         img_path = os.path.join(pred_path, name)
@@ -46,7 +48,10 @@ def run_experiment(hparams):
     if "resume_from_checkpoint" in hparams:
         model = model.load_from_checkpoint(hparams["resume_from_checkpoint"])
 
-    experiment_name = "_".join([time.strftime("%Y%m%d_%H%M%S"), hparams["experiment_name"]])
+    output_stride = model.model.encoder.output_stride
+
+    experiment_name = "_".join(
+        [time.strftime("%Y%m%d_%H%M%S"), hparams["experiment_name"]])
 
     wandb_logger = WandbLogger(
         name=experiment_name, project="cil2022")
@@ -63,8 +68,9 @@ def run_experiment(hparams):
                                callbacks=callbacks,
                                )
 
-    datamodule = RoadSegDataModule(data_dir="data", random_seed=hparams["random_seed"], **hparams["dataset"])
-    
+    datamodule = RoadSegDataModule(
+        data_dir="data", random_seed=hparams["random_seed"], output_stride=output_stride, **hparams["dataset"])
+
     if hparams["train"]:
         trainer.fit(model, datamodule=datamodule)
 
