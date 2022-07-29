@@ -11,6 +11,8 @@ PROCESSED_DATA_PATH = 'data/processed'
 DATASET_NAME = 'cil-road-segmentation-2022'
 
 def make_dataset_small():
+    """Constructs a dataset with smaller images by splitting each image in four 200x200 images
+    """
     base_path = os.path.join(PROCESSED_DATA_PATH, "training")
     image_path = os.path.join(base_path, "images")
     groundtruth_path = os.path.join(base_path, "groundtruth")
@@ -56,6 +58,8 @@ def main():
     zip_file = os.path.join(RAW_DATA_PATH, DATASET_NAME + '.zip')
     with zipfile.ZipFile(zip_file, 'r') as f:
         f.extractall(PROCESSED_DATA_PATH)
+
+    make_dataset_small()
 
 if __name__ == '__main__':
     log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'

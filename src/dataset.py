@@ -12,6 +12,12 @@ from src.utils import object_from_dict
 
 
 def get_train_transform(augmentations, use_small):
+    """Returns the transformations used for training images
+
+    Args:
+        augmentations: A list of dicts containing the configuration for training augmentations
+        use_small: A boolean indicating if small images (200x200) are used
+    """
     train_transform = []
     if use_small:
         train_transform.append(
@@ -36,6 +42,11 @@ def get_train_transform(augmentations, use_small):
 
 
 def get_val_transform(use_small):
+    """Returns the transformations used for validation and test images
+
+    Args:
+        use_small: A boolean indicating if small images (200x200) are used
+    """
     val_transform = []
     if use_small:
         val_transform.append(

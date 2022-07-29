@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 from importlib import import_module
 from torch.nn import functional as F
@@ -68,7 +67,6 @@ class LogPredictionsCallback(Callback):
         wandb_logger: an instance of a wandb logger
         num_samples: number of samples to log per validation step
     """
-
     def __init__(self, wandb_logger: WandbLogger, num_samples=4):
         self.logger = wandb_logger
         self.num_samples = num_samples

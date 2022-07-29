@@ -21,7 +21,6 @@ class SMPModel(LightningModule):
 
 
     def forward(self, image):
-        # normalize image here
         image = (image - self.mean) / self.std
         mask = self.model(image)
         return mask
