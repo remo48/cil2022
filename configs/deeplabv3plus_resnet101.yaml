@@ -22,7 +22,7 @@ trainer:
   #devices: 1
 
 loss_fn:
-  type: segmentation_models_pytorch.losses.DiceLoss
+  type: segmentation_models_pytorch.losses.JaccardLoss
   mode: binary
   from_logits: True
 
@@ -33,8 +33,8 @@ optimizer:
 scheduler:
   type: torch.optim.lr_scheduler.ReduceLROnPlateau
   mode: max
-  factor: 0.25
-  patience: 5
+  factor: 0.1
+  patience: 10
   min_lr: 0.00001
   verbose: True
 
