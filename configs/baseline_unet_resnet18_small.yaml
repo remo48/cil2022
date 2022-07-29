@@ -1,15 +1,15 @@
 random_seed: 1234
 
-experiment_name: "deeplabv3plus_resnet101"
+experiment_name: "baseline_unet_resnet18_small"
 
 train: True
-predict: True
+predict: False
 
 #resume_from_checkpoint: logs/cil2022_default/ycwf0jpw_21/checkpoints/epoch=118-step=2022.ckpt
 
 model:
-  type: segmentation_models_pytorch.DeepLabV3Plus
-  encoder_name: resnet101
+  type: segmentation_models_pytorch.Unet
+  encoder_name: resnet18
   encoder_weights: imagenet
   in_channels: 3
   classes: 1
@@ -18,11 +18,11 @@ trainer:
   type: pytorch_lightning.Trainer
   max_epochs: 200
   log_every_n_steps: 5
-  accelerator: gpu
-  devices: 1
+  #accelerator: gpu
+  #devices: 1
 
 loss_fn:
-  type: segmentation_models_pytorch.losses.JaccardLoss
+  type: segmentation_models_pytorch.losses.DiceLoss
   mode: binary
   from_logits: True
 
@@ -44,4 +44,5 @@ dataset:
   shuffle: True
   num_workers: 4
   massachusetts: False
-  augmentations: # use default
+  use_small_images: True
+  augmentations: [] # no augmentation

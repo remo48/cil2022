@@ -44,10 +44,4 @@ dataset:
   shuffle: True
   num_workers: 4
   massachusetts: False
-  augmentations:
-    - 
-      type: albumentations.VerticalFlip
-      p: 0.5
-    -
-      type: albumentations.RandomRotate90
-      p: 0.5
+  augmentations: # use default

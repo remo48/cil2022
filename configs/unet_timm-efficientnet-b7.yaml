@@ -1,6 +1,6 @@
 random_seed: 1234
 
-experiment_name: "deeplabv3plus_resnet101"
+experiment_name: "unet_timm-efficientnet-b7"
 
 train: True
 predict: True
@@ -8,9 +8,9 @@ predict: True
 #resume_from_checkpoint: logs/cil2022_default/ycwf0jpw_21/checkpoints/epoch=118-step=2022.ckpt
 
 model:
-  type: segmentation_models_pytorch.DeepLabV3Plus
-  encoder_name: resnet101
-  encoder_weights: imagenet
+  type: segmentation_models_pytorch.Unet
+  encoder_name: timm-efficientnet-b7
+  encoder_weights: noisy-student
   in_channels: 3
   classes: 1
 
