@@ -1,9 +1,15 @@
-import torch
+import os
 from importlib import import_module
-from torch.nn import functional as F
-from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning import Callback
+
+import numpy as np
+import torch
 import wandb
+from matplotlib import pyplot as plt
+from PIL import Image
+from pytorch_lightning import Callback
+from pytorch_lightning.loggers import WandbLogger
+from torch.nn import functional as F
+from tqdm import tqdm
 
 
 def get_stats(pr_masks: torch.Tensor, gt_masks: torch.Tensor, patch_size=16, foreground_threshold=0.25):
@@ -58,6 +64,32 @@ def object_from_dict(d, **default_kwargs):
         msg = 'Module "%s" does not define a "%s" attribute/class' % (
             module_path, class_name)
         raise ImportError(msg)
+
+def get_dataset_statistics():
+    """Plots the distribution of the number of street pixels 
+    in the massachusetts dataset
+    """
+
+    data_path = "data/processed/massachusetts/groundtruth"
+    size = len(os.listdir(data_path))
+    percentages = np.zeros(size)
+
+
+    for index, name in tqdm(enumerate(os.listdir(data_path))):
+        path = os.path.join(data_path, name)
+        im = Image.open(path)
+        im = np.asarray(im)
+        percentages[index] = np.count_nonzero(im) / im.size
+
+    print(np.percentile(percentages, 10))
+    print(np.percentile(percentages, 25))
+    print(np.percentile(percentages, 50))
+    print(np.percentile(percentages, 75))
+    print(np.percentile(percentages, 90))
+
+    plt.hist(percentages, bins=100) 
+    plt.title("histogram") 
+    plt.show()
 
 
 class LogPredictionsCallback(Callback):
